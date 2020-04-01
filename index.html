@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>SignalK Application Container</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+	<script type="text/javascript" src="lib/signalk-client/signalk-client.js"></script>
+	<script type="text/javascript" src="lib/Swipe.js"></script>
+
+    <style>
+        html, body {
+            background: black;
+            border: 0;
+            margin: 0;
+            padding: 0;
+        }
+
+        #signalk-app-container {
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
+
+    <script>
+        function noRightClick(contextHandler) {
+            document.addEventListener("contextmenu", (e) => { e.preventDefault(); });
+            window.event.cancelBubble = true;
+        }
+
+        function getConnectionInfo() {
+            var retval = null;
+            var urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('server') && urlParams.has('port')) {
+                retval = { server: urlParams.get('server'), port: urlParams.get('port') };
+                localStorage.setItem('pdjr-signalkappcontainer-connectioninfo', JSON.stringify(retval));
+            } else {
+                if (localStorage.getItem('pdjr-signalkappcontainer-connectioninfo')) {
+                    retval = JSON.parse(localStorage.getItem('pdjr-signalkappcontainer-connectioninfo'));
+                } else {
+                    var response = prompt("Please specify SignalK server as 'hostname:port'");
+                    if (response != null) {
+                        var found = response.match(/(\.*)\:(%d+)/);
+                        console.log(JSON.stringify(found));
+                    }
+                }
+            }
+            return(retval);
+        }
+
+        function getApplicationInfo() {
+            var retval = null;
+            var urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('apps')) {
+                retval = urlParams.get('apps').split(',');
+            } else {
+                if (localStorage.getItem('pdjr-signalkappcontainer-apps')) {
+                    retval = JSON.parse(localStorage.getItem('pdjr-signalkappcontainer-apps'));
+                }
+            }
+            return(retval);
+        }
+
+        function addApplication(container, app) {
+            if ((container) && (app)) {
+                var content = container.appendChild(document.createElement("object"));
+                content.style.width = "100%";
+                content.style.height = "100%";
+                content.data = app;
+            }
+        }
+
+        function initialise() {
+            var conn = getConnectionInfo();
+            if (conn) {
+                SignalkClient = new SignalkClient(conn.server, conn.port);
+                SignalkClient.waitForConnection().then(_ => {
+                    var apps = getApplicationInfo();
+                    if (apps) apps.forEach(app => {
+                        var container = document.getElementById('signalk-app-container');
+                        addApplication(container, app);
+                        new Swipe(container, { debug: true });
+                    });
+                });
+            }
+        }
+
+    </script>
+</head>
+<body onload="noRightClick(); initialise();">
+    <div id="signalk-app-container">
+    </div>
+</body>
+</html>

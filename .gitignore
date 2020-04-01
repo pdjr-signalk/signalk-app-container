@@ -1,3 +1,6 @@
+# Local stuff
+lib/signalk-client
+
 # Logs
 logs
 *.log
