@@ -4,8 +4,8 @@
 	<title>SignalK Application Container</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 
-	<script type="text/javascript" src="lib/signalk-client/signalk-client.js"></script>
-	<script type="text/javascript" src="lib/Swipe.js"></script>
+	<script type="text/javascript" src="lib/signalk-client/SignalkClient.js"></script>
+	<script type="text/javascript" src="lib/swipe-handler/SwipeHandler.js"></script>
 
     <style>
         html, body {
@@ -19,12 +19,22 @@
             width: 100vw;
             height: 100vh;
         }
+
+        .signalk-app-container-element {
+            width: 100%;
+            height: 100%;
+        }
+
+        .hidden {
+            display: none;
+        }
+
     </style>
 
     <script>
         function noRightClick(contextHandler) {
             document.addEventListener("contextmenu", (e) => { e.preventDefault(); });
-            window.event.cancelBubble = true;
+            //window.event.cancelBubble = true;
         }
 
         function getConnectionInfo() {
@@ -39,8 +49,11 @@
                 } else {
                     var response = prompt("Please specify SignalK server as 'hostname:port'");
                     if (response != null) {
-                        var found = response.match(/(\.*)\:(%d+)/);
-                        console.log(JSON.stringify(found));
+                        var found = response.match(/(.*)\:(\d+)/);
+                        if (found.length == 3) {
+                            retval = { server: found[1], port: found[2] };
+                            localStorage.setItem('pdjr-signalkappcontainer-connectioninfo', JSON.stringify(retval));
+                        }
                     }
                 }
             }
@@ -48,10 +61,11 @@
         }
 
         function getApplicationInfo() {
-            var retval = null;
+            var retval = [];
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.has('apps')) {
                 retval = urlParams.get('apps').split(',');
+                localStorage.setItem('pdjr-signalkappcontainer-apps', JSON.stringify(retval));
             } else {
                 if (localStorage.getItem('pdjr-signalkappcontainer-apps')) {
                     retval = JSON.parse(localStorage.getItem('pdjr-signalkappcontainer-apps'));
@@ -60,25 +74,28 @@
             return(retval);
         }
 
-        function addApplication(container, app) {
-            if ((container) && (app)) {
-                var content = container.appendChild(document.createElement("object"));
-                content.style.width = "100%";
-                content.style.height = "100%";
-                content.data = app;
-            }
-        }
-
         function initialise() {
+            var container = document.getElementById('signalk-app-container');
             var conn = getConnectionInfo();
             if (conn) {
-                SignalkClient = new SignalkClient(conn.server, conn.port);
-                SignalkClient.waitForConnection().then(_ => {
-                    var apps = getApplicationInfo();
-                    if (apps) apps.forEach(app => {
-                        var container = document.getElementById('signalk-app-container');
-                        addApplication(container, app);
-                        new Swipe(container, { debug: true });
+                window.SignalkClient = new SignalkClient(conn.server, conn.port);
+                window.SignalkClient.waitForConnection().then(_ => {
+                    window.SwipeHandler = new SwipeHandler({ debug: true });
+                    getApplicationInfo().forEach(app => {
+                        var panel = document.createElement("object");
+                        panel.className = "signalk-app-container-element";
+                        container.appendChild(panel);
+                        panel.data = app;
+
+                        (function wait() {
+                            if (panel.contentDocument == null) {
+                                setTimeout(wait, 500);
+                            } else {
+                                panel.contentDocument.addEventListener("touchdown", function() { alert("HH"); });
+                                //Swipe.addPanel(panel, panel.contentDocument.querySelector('body'));
+                            }
+                        }.bind(this))();
+
                     });
                 });
             }
