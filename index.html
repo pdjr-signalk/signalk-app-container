@@ -88,11 +88,10 @@
                         panel.data = app;
 
                         (function wait() {
-                            if (panel.contentDocument == null) {
+                            if (panel.contentWindow == null) {
                                 setTimeout(wait, 500);
                             } else {
-                                panel.contentDocument.addEventListener("touchdown", function() { alert("HH"); });
-                                //Swipe.addPanel(panel, panel.contentDocument.querySelector('body'));
+                                window.SwipeHandler.addPanel(panel, panel.contentWindow);
                             }
                         }.bind(this))();
 
