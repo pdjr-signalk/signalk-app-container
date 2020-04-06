@@ -1,5 +1,6 @@
 # Local stuff
 lib/signalk-client
+lib/swipe-handler
 
 # Logs
 logs
