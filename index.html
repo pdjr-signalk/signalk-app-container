@@ -86,15 +86,7 @@
                         panel.className = "signalk-app-container-element";
                         container.appendChild(panel);
                         panel.data = app;
-
-                        (function wait() {
-                            if (panel.contentWindow == null) {
-                                setTimeout(wait, 500);
-                            } else {
-                                window.SwipeHandler.addPanel(panel, panel.contentWindow);
-                            }
-                        }.bind(this))();
-
+                        window.SwipeHandler.addPanel(panel);
                     });
                 });
             }
